@@ -816,10 +816,10 @@ void lj_gc_barriertrace(global_State *g, uint32_t traceno)
 /* Write to memory alloc trace file */
 void lj_trace_mem_realloc(lua_State *L, global_State *g, void *p, GCSize osz, GCSize nsz)
 {
-  char s[140];
+  char s[LUA_IDSIZE + 80];
   lua_Debug ar;
   char more = 0;
-  int n;
+  int n, sl;
   if (lua_getstack(L, 0, &ar) > 0) {
     if (lua_getinfo(L, "Sl", &ar) != 0 && ar.short_src[0] != 0) {
       more = 1;
@@ -829,7 +829,8 @@ void lj_trace_mem_realloc(lua_State *L, global_State *g, void *p, GCSize osz, GC
     } 
   }
   if (more) {
-    n = snprintf(s, sizeof(s), "LuaJIT realloc: g=%p p=%p o=%u n=%u @ %s:%d\n", g, p, osz, nsz, ar.short_src, ar.currentline);
+    sl = strnlen(ar.short_src, LUA_IDSIZE);
+    n = snprintf(s, sizeof(s), "LuaJIT realloc: g=%p p=%p o=%u n=%u @ %.*s:%d\n", g, p, osz, nsz, sl, ar.short_src, ar.currentline);
   } else {
     n = snprintf(s, sizeof(s), "LuaJIT realloc: g=%p p=%p o=%u n=%u\n", g, p, osz, nsz);
   }
