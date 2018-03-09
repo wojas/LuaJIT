@@ -823,6 +823,9 @@ void lj_trace_mem_realloc(lua_State *L, global_State *g, void *p, GCSize osz, GC
   if (lua_getstack(L, 0, &ar) > 0) {
     if (lua_getinfo(L, "Sl", &ar) != 0 && ar.short_src[0] != 0) {
       more = 1;
+      if (ar.currentline < 0 && lua_getstack(L, 1, &ar) > 0) {
+        lua_getinfo(L, "Sl", &ar); // Look one frame higher if 0 was C
+      }
     } 
   }
   if (more) {
