@@ -233,7 +233,7 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
   // FIXME: find a better place or way to init this per 
   char *tracefile = getenv("LUAJIT_ALLOC_TRACE_FILE");
   if (tracefile != NULL) {
-    int fd = open(tracefile, O_CREAT|O_APPEND|O_WRONLY);
+    int fd = open(tracefile, O_CREAT|O_APPEND|O_WRONLY, 0644);
     if (fd < 0) {
       perror("LuaJIT: cannot open LUAJIT_ALLOC_TRACE_FILE");
     } else {
