@@ -224,6 +224,12 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
   g->gc.stepmul = LUAI_GCMUL;
   lj_dispatch_init((GG_State *)L);
   L->status = LUA_ERRERR+1;  /* Avoid touching the stack upon memory error. */
+  if (lj_vm_cpcall(L, NULL, NULL, cpluaopen) != 0) {
+    /* Memory allocation error: free partial state. */
+    close_state(L);
+    return NULL;
+  }
+  L->status = LUA_OK;
   // FIXME: find a better place or way to init this per 
   char *tracefile = getenv("LUAJIT_ALLOC_TRACE_FILE");
   if (tracefile != NULL) {
@@ -234,12 +240,6 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
       g->alloctracefd = fd;
     }
   }
-  if (lj_vm_cpcall(L, NULL, NULL, cpluaopen) != 0) {
-    /* Memory allocation error: free partial state. */
-    close_state(L);
-    return NULL;
-  }
-  L->status = LUA_OK;
   return L;
 }
 
