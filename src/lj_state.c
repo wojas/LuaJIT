@@ -29,6 +29,11 @@
 #include "lj_alloc.h"
 #include "luajit.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+
 /* -- Stack handling ------------------------------------------------------ */
 
 /* Stack sizes. */
@@ -219,6 +224,16 @@ LUA_API lua_State *lua_newstate(lua_Alloc f, void *ud)
   g->gc.stepmul = LUAI_GCMUL;
   lj_dispatch_init((GG_State *)L);
   L->status = LUA_ERRERR+1;  /* Avoid touching the stack upon memory error. */
+  // FIXME: find a better place or way to init this per 
+  char *tracefile = getenv("LUAJIT_ALLOC_TRACE_FILE");
+  if (tracefile != NULL) {
+    int fd = open(tracefile, O_CREAT|O_APPEND|O_WRONLY);
+    if (fd < 0) {
+      perror("LuaJIT: cannot open LUAJIT_ALLOC_TRACE_FILE");
+    } else {
+      g->alloctracefd = fd;
+    }
+  }
   if (lj_vm_cpcall(L, NULL, NULL, cpluaopen) != 0) {
     /* Memory allocation error: free partial state. */
     close_state(L);

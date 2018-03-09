@@ -27,6 +27,9 @@
 #include "lj_trace.h"
 #include "lj_vm.h"
 
+#include <unistd.h>
+#include <stdio.h>
+
 #define GCSTEPSIZE	1024u
 #define GCSWEEPMAX	40
 #define GCSWEEPCOST	10
@@ -810,12 +813,23 @@ void lj_gc_barriertrace(global_State *g, uint32_t traceno)
 
 /* -- Allocator ----------------------------------------------------------- */
 
+/* Write to memory alloc trace file */
+void lj_trace_mem_realloc(lua_State *L, global_State *g, void *p, GCSize osz, GCSize nsz)
+{
+  char s[100];  
+  int n = snprintf(s, sizeof(s), "LuaJIT realloc: g=%p p=%p o=%u n=%u\n", g, p, osz, nsz);
+  write(g->alloctracefd, s, n);
+}
+
 /* Call pluggable memory allocator to allocate or resize a fragment. */
 void *lj_mem_realloc(lua_State *L, void *p, GCSize osz, GCSize nsz)
 {
   global_State *g = G(L);
   lua_assert((osz == 0) == (p == NULL));
   p = g->allocf(g->allocd, p, osz, nsz);
+  //printf("realloc: %p %u %u\n", p, osz, nsz);
+  if (g->alloctracefd > 0)
+    lj_trace_mem_realloc(L, g, p, osz, nsz);
   if (p == NULL && nsz > 0)
     lj_err_mem(L);
   lua_assert((nsz == 0) == (p == NULL));
@@ -831,6 +845,8 @@ void * LJ_FASTCALL lj_mem_newgco(lua_State *L, GCSize size)
   GCobj *o = (GCobj *)g->allocf(g->allocd, NULL, 0, size);
   if (o == NULL)
     lj_err_mem(L);
+  if (g->alloctracefd > 0)
+    lj_trace_mem_realloc(L, g, o, 0, size);
   lua_assert(checkptrGC(o));
   g->gc.total += size;
   setgcrefr(o->gch.nextgc, g->gc.root);
