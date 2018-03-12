@@ -451,7 +451,7 @@ int lj_debug_getinfo(lua_State *L, const char *what, lj_Debug *ar, int ext)
 	BCLine firstline = pt->firstline;
 	GCstr *name = proto_chunkname(pt);
         // FIXME: for some reason this can be a null pointer
-        if (name == NULL) {
+        if (pt == NULL || name == NULL) {
  	  ar->source = "=[0]";
 	  ar->short_src[0] = '[';
 	  ar->short_src[1] = '0';
