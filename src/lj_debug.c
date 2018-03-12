@@ -450,11 +450,23 @@ int lj_debug_getinfo(lua_State *L, const char *what, lj_Debug *ar, int ext)
 	GCproto *pt = funcproto(fn);
 	BCLine firstline = pt->firstline;
 	GCstr *name = proto_chunkname(pt);
-	ar->source = strdata(name);
-	lj_debug_shortname(ar->short_src, name, pt->firstline);
-	ar->linedefined = (int)firstline;
-	ar->lastlinedefined = (int)(firstline + pt->numline);
-	ar->what = (firstline || !pt->numline) ? "Lua" : "main";
+        // FIXME: for some reason this can be a null pointer
+        if (name == NULL) {
+ 	  ar->source = "=[0]";
+	  ar->short_src[0] = '[';
+	  ar->short_src[1] = '0';
+	  ar->short_src[2] = ']';
+	  ar->short_src[3] = '\0';
+	  ar->linedefined = -1;
+	  ar->lastlinedefined = -1;
+	  ar->what = "NULL";         
+        } else {
+	  ar->source = strdata(name);
+	  lj_debug_shortname(ar->short_src, name, pt->firstline);
+	  ar->linedefined = (int)firstline;
+	  ar->lastlinedefined = (int)(firstline + pt->numline);
+	  ar->what = (firstline || !pt->numline) ? "Lua" : "main";
+        }
       } else {
 	ar->source = "=[C]";
 	ar->short_src[0] = '[';
